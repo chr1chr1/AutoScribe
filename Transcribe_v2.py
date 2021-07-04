@@ -51,7 +51,7 @@ def SoloTranscribe(wave, length, tempo, subdivision):
     ts = np.arange(NumSamples) / SampleRate 
 
     for timestep in ts:
-        segment = wave.segment(timestep, SamplePeriod)
+        segment = wave.segment(start=timestep, duration=0.02)
         
         #if max amp of segment peak is significantly below the average of the others, call it a rest
         spectrum = segment.make_spectrum()

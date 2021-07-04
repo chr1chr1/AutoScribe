@@ -8,32 +8,28 @@ if not os.path.exists('thinkdsp.py'):
     !wget https://github.com/AllenDowney/ThinkDSP/raw/master/code/thinkdsp.py
     
 import numpy as np
-
-def serial_corr(wave, lag=1):
-    N = len(wave)
-    y1 = wave.ys[lag:]
-    y2 = wave.ys[:N-lag]
-    corr = np.corrcoef(y1, y2)[0, 1]
-    return corr
-
-def autocorr(wave):
-    """Computes and plots the autocorrelation function.
-
-    wave: Wave
+  
+def AutoPitch(segment, low=10, high=300):
+    """Use Autocorrelation to estimate pitch more accurately than spectrums"""
+    #only use positive lags, and standardize correlation
+    N = len(segment)
+    corrs = np.correlate(segment.ys, segment.ys, mode='same')
+    lags = np.arange(-N//2, N//2)
+    N = len(corrs)
+    lengths = range(N, N//2, -1)
+    half = corrs[N//2:].copy()
+    half /= lengths
+    half /= half[0]
     
-    returns: tuple of sequences (lags, corrs)
-    """
-    lags = np.arange(len(wave.ys)//2)
-    corrs = [serial_corr(wave, lag) for lag in lags]
-    return lags, corrs
+    #use argmax to find index of peak (# of frames lagged with highest correlation)
+    lag = np.array(half[low:high]).argmax() + low
 
-def estimate_fundamental(segment, low=10, high=400):
-    lags, corrs = autocorr(segment)
-    lag = np.array(corrs[low:high]).argmax() + low
+    #find frequency
     period = lag / segment.framerate
     frequency = 1 / period
+
     return frequency
-  
+
 def SoloTranscribe(wave, length, tempo, subdivision):
     """wave: song to transcribe (.wav.) -- only works for solo instruments right now
     length: length of song (in seconds) -- possible to get the length of the sound file without an argument?

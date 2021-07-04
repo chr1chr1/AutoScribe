@@ -1,5 +1,14 @@
 #use autocorrelation to estimate fundamental frequencies
 
+# Get thinkdsp.py
+
+import os
+
+if not os.path.exists('thinkdsp.py'):
+    !wget https://github.com/AllenDowney/ThinkDSP/raw/master/code/thinkdsp.py
+    
+import numpy as np
+
 def serial_corr(wave, lag=1):
     N = len(wave)
     y1 = wave.ys[lag:]

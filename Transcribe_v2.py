@@ -9,7 +9,7 @@ if not os.path.exists('thinkdsp.py'):
     
 import numpy as np
   
-def AutoPitch(segment, low=10, high=300):
+def AutoPitch(segment, low=10, high=200):
     """Use Autocorrelation to estimate pitch more accurately than spectrums"""
     #only use positive lags, and standardize correlation
     N = len(segment)
@@ -30,8 +30,8 @@ def AutoPitch(segment, low=10, high=300):
 
     return frequency
 
-def SoloTranscribe(wave, length, tempo, subdivision):
-    """wave: song to transcribe (.wav.) -- only works for solo instruments right now
+def transcribe2(wave, length, tempo, subdivision, NumVoices):
+    """wave: song to transcribe (.wav.) -- works for 1 or 2 voices
     length: length of song (in seconds) -- possible to get the length of the sound file without an argument?
     tempo: BPM of song
     subdivision: fastest note, e.g. 1/16 = sixteenth note, 1/4 = quarter note
@@ -51,7 +51,7 @@ def SoloTranscribe(wave, length, tempo, subdivision):
     ts = np.arange(NumSamples) / SampleRate 
 
     for timestep in ts:
-        segment = wave.segment(start=timestep, duration=0.02)
+        segment = wave.segment(start=timestep, duration=SamplePeriod)
         
         #if max amp of segment peak is significantly below the average of the others, call it a rest
         spectrum = segment.make_spectrum()
@@ -62,12 +62,16 @@ def SoloTranscribe(wave, length, tempo, subdivision):
         if peak_amp < mean_peak_amp*.25:
             transcription.append("Rest")
         
-        else:
+        elif NumVoices == 1:
             #guess fundamental frequency
-            fundamental = estimate_fundamental(segment)
+            fundamental = AutoPitch(segment) # independent of segment size, since we look at specific range of lags?
             #Find note corresponding to frequency
             note = FindNote(fundamental)
             #Add note to transcription
             transcription.append(note)
+            
+        elif NumVoices == 2:
+            chord = GuessChord3(segment, NumVoices)
+            transcription.append(chord)
         
     return transcription
